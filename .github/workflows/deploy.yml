@@ -1,59 +1,48 @@
-name: gh-pages deploy
+name: Deploy
 
 on:
   push:
     branches:
       - main
 
-  workflow_dispatch:
-
 jobs:
   build:
-    name: build
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: setup node
+      - name: Setup Node
         uses: actions/setup-node@v3
-        with:
-          node-version: "lts/*"
-          cache: "npm"
 
-      - name: setup bun runtime
-        uses: antongolub/action-setup-bun@v1
-        with:
-          cache: true
+      - name: Install dependencies
+        uses: bahmutov/npm-install@v1
 
-      - name: install dependencies
-        run: bun install
+      - name: Build project
+        run: npm run build
 
-      - name: build
-        run: bun run build
-        env:
-          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
-
-      - name: upload production-ready build files
+      - name: Upload production-ready build files
         uses: actions/upload-artifact@v3
         with:
           name: production-files
           path: ./dist
 
   deploy:
-    name: deploy
+    name: Deploy
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: download artifact
+      - name: Download artifact
         uses: actions/download-artifact@v3
         with:
           name: production-files
           path: ./dist
 
-      - name: deploy
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
